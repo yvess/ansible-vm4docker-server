@@ -1,0 +1,35 @@
+---
+
+- shell: wget -qO- https://get.docker.io/gpg | sudo apt-key add - && echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list
+  args:
+    creates: /etc/apt/sources.list.d/docker.list
+  notify: apt update
+
+- name: install packages for docker
+  apt: pkg={{item}} state=present
+  with_items:
+  - lxc-docker
+  - nfs-common
+
+- name: add tls to docker daemon
+  lineinfile: dest=/etc/default/docker line='DOCKER_OPTS="--tlsverify --tlscacert=/etc/docker/tls/ca/ca.pem --tlscert=/etc/docker/tls/ca/server-cert.pem --tlskey=/etc/docker/tls/ca/server-key.pem -H=0.0.0.0:2376"'
+  notify: restart docker
+
+- file: path=/etc/docker/tls/ state=directory mode=0700
+- file: path=/etc/docker/tls/ca state=directory mode=0700
+- file: path=/etc/docker/tls/client state=directory mode=0700
+
+- name: copy tls docker files
+  copy: src="{{ lookup('env', 'HOME')}}/.vm4docker/{{item}}" dest="/etc/docker/tls/ca/{{item}}" owner=root mode=0400
+  with_items:
+  - ca.pem
+  - server-cert.pem
+  - server-key.pem
+
+- stat: path=/Users
+  register: users_path
+- file: path=/Users state=directory
+  when: not users_path.stat.exists
+
+- name: fstab nfs
+  lineinfile: dest=/etc/fstab line='{{ docker_gatewayip }}:/Users /Users nfs noatime,bg,rw,vers=3,tcp,actimeo=1800,rsize=262144,wsize=262144 0 0'

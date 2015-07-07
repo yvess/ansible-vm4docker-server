@@ -1,0 +1,15 @@
+---
+galaxy_info:
+  author: Yves Serrano
+  description: create docker setup for vm4docker
+  company: taywa
+  license: BSD
+  min_ansible_version: 1.2
+  platforms:
+  - name: Ubuntu
+   versions:
+   - all
+  categories:
+  - development
+  - system
+dependencies: []
