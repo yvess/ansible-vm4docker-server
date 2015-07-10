@@ -1,7 +1,4 @@
 ---
 
-- name: apt update
-  shell: apt-get update
-
 - name: restart docker
   service: name=docker state=restarted

@@ -1,9 +1,11 @@
 ---
 
-- shell: wget -qO- https://get.docker.io/gpg | sudo apt-key add - && echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list
+- shell: >
+    wget -qO- https://get.docker.io/gpg | sudo apt-key add - &&
+    echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list &&
+    apt-get update
   args:
     creates: /etc/apt/sources.list.d/docker.list
-  notify: apt update
 
 - name: install packages for docker
   apt: pkg={{item}} state=present
@@ -11,20 +13,28 @@
   - lxc-docker
   - nfs-common
 
-- name: add tls to docker daemon
-  lineinfile: dest=/etc/default/docker line='DOCKER_OPTS="--tlsverify --tlscacert=/etc/docker/tls/ca/ca.pem --tlscert=/etc/docker/tls/ca/server-cert.pem --tlskey=/etc/docker/tls/ca/server-key.pem -H=0.0.0.0:2376"'
-  notify: restart docker
+- file: path=/etc/docker state=directory mode=0755
+- file: path=/etc/docker/tls state=directory mode=0755
 
-- file: path=/etc/docker/tls/ state=directory mode=0700
-- file: path=/etc/docker/tls/ca state=directory mode=0700
-- file: path=/etc/docker/tls/client state=directory mode=0700
-
-- name: copy tls docker files
-  copy: src="{{ lookup('env', 'HOME')}}/.vm4docker/{{item}}" dest="/etc/docker/tls/ca/{{item}}" owner=root mode=0400
+- name: copy tls ca server files
+  copy: src="{{ lookup('env', 'HOME')}}/.vm4docker/{{item}}" dest="/etc/docker/tls/{{item}}" owner=root mode=0400
   with_items:
-  - ca.pem
   - server-cert.pem
   - server-key.pem
+
+- name: copy tls ca client files
+  copy: src="{{ lookup('env', 'HOME')}}/.vm4docker/{{item}}" dest="/etc/docker/tls/{{item}}" owner=root mode=0444
+  with_items:
+  - ca.pem
+  - cert.pem
+  - key.pem
+
+- name: copy docker envs /etc/profile.d/
+  copy: src="docker-client.sh" dest="/etc/profile.d/docker-client.sh" owner=root mode=0644
+
+- name: add tls to docker daemon
+  lineinfile: dest=/etc/default/docker line='DOCKER_OPTS="--tlsverify --tlscacert=/etc/docker/tls/ca.pem --tlscert=/etc/docker/tls/server-cert.pem --tlskey=/etc/docker/tls/server-key.pem -H=0.0.0.0:2376"'
+  notify: restart docker
 
 - stat: path=/Users
   register: users_path
