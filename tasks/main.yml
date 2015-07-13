@@ -17,13 +17,13 @@
 - file: path=/etc/docker/tls state=directory mode=0755
 
 - name: copy tls ca server files
-  copy: src="{{ lookup('env', 'HOME')}}/.vm4docker/{{item}}" dest="/etc/docker/tls/{{item}}" owner=root mode=0400
+  copy: src="{{ lookup('env', 'HOME')}}/.vm4docker/certs/{{item}}" dest="/etc/docker/tls/{{item}}" owner=root mode=0400
   with_items:
   - server-cert.pem
   - server-key.pem
 
 - name: copy tls ca client files
-  copy: src="{{ lookup('env', 'HOME')}}/.vm4docker/{{item}}" dest="/etc/docker/tls/{{item}}" owner=root mode=0444
+  copy: src="{{ lookup('env', 'HOME')}}/.vm4docker/certs/{{item}}" dest="/etc/docker/tls/{{item}}" owner=root mode=0444
   with_items:
   - ca.pem
   - cert.pem
