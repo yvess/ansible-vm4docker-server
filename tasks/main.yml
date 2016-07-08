@@ -10,7 +10,7 @@
 - name: install packages for docker
   apt: pkg={{item}} state=present
   with_items:
-  - lxc-docker
+  - docker-engine
   - nfs-common
 
 - file: path=/etc/docker state=directory mode=0755
